@@ -283,8 +283,8 @@ function focusStation(id) {
 /* ---------- controls ---------- */
 
 var METRIC_NOTES = {
-  within: 'Only birds inside the 100m survey radius',
-  all: 'Every bird counted, including harbor scans past 100m'
+  within: 'Only birds inside the 100 m survey radius',
+  all: 'Every bird counted, including harbor scans past 100 m'
 };
 
 function wireControls() {
