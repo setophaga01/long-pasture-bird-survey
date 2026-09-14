@@ -1,20 +1,18 @@
-/* Long Pasture point counts
-   Palette borrowed from NOAA harbor charts: buff land, pale water,
-   chart magenta for anything to do with sightlines. */
-
 :root {
   --water:      #EDF3F5;
-  --land:       #C9D9C3;
-  --land-deep:  #879E7E;
-  --ink:        #1B1F1B;
-  --ink-soft:   #44634B;
+  --land:       #E7DEC6;
+  --land-deep:  #DCD0B2;
+  --ink:        #16323F;
+  --ink-soft:   #4C6472;
   --rule:       #C6BA9C;
   --marsh:      #3B6B52;
   --magenta:    #A81E67;
 
   --panel-w: 22.5rem;
-  --sans: "Archivo Narrow", "Helvetica Neue", sans-serif;
-  --serif: "Spectral", Georgia, serif;
+  /* One typeface throughout. --serif is kept as a name only so the rules
+     below don't all need rewriting; it points at Outfit too. */
+  --sans:  "Outfit", "Helvetica Neue", Arial, sans-serif;
+  --serif: "Outfit", "Helvetica Neue", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -24,7 +22,7 @@ html, body {
   height: 100%;
   background: var(--water);
   color: var(--ink);
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 16px;
   line-height: 1.5;
 }
@@ -45,12 +43,13 @@ html, body {
 }
 
 .masthead h1 {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-weight: 600;
-  font-size: 2rem;
-  line-height: 1.1;
+  font-size: 1.375rem;   /* sized so "Long Pasture Bird Survey" fits the panel */
+  line-height: 1.2;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
+  text-wrap: balance;    /* if it ever wraps, split the lines evenly */
 }
 
 .standfirst {
@@ -259,7 +258,7 @@ select {
 }
 
 .leaflet-popup-tip { background: var(--land); }
-.leaflet-popup-content { margin: 0.9rem 1rem; font-family: var(--serif); }
+.leaflet-popup-content { margin: 0.9rem 1rem; font-family: var(--sans); }
 
 .pop h3 {
   margin: 0;
