@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Long Pasture point counts — fall 2026</title>
+<meta name="description" content="Weekly bird point counts at eight stations, Long Pasture Wildlife Sanctuary, Cummaquid, Massachusetts.">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+<div class="shell">
+
+  <aside class="panel">
+    <header class="masthead">
+      <h1>Long Pasture</h1>
+      <p class="standfirst">Eight fixed stations, counted weekly through fall migration. Cummaquid, Barnstable, Massachusetts.</p>
+    </header>
+
+    <section class="control" aria-labelledby="metric-label">
+      <h2 id="metric-label">What the circles measure</h2>
+      <div class="segmented" role="radiogroup" aria-labelledby="metric-label">
+        <button type="button" role="radio" aria-checked="true" data-metric="within" class="is-active">Within 100 m</button>
+        <button type="button" role="radio" aria-checked="false" data-metric="all">Everything visible</button>
+      </div>
+      <p class="control-note" id="metric-note">Only birds inside the 100 m survey radius. This is the number that compares fairly across all eight stations.</p>
+    </section>
+
+    <section class="control">
+      <h2><label for="week-select">Survey week</label></h2>
+      <select id="week-select"></select>
+    </section>
+
+    <section class="control">
+      <h2>Stations</h2>
+      <ol class="station-list" id="station-list"></ol>
+    </section>
+
+    <section class="control">
+      <h2>Reading the map</h2>
+      <ul class="legend">
+        <li><span class="key key-radius" aria-hidden="true"></span>Radius station: everything within 100 m of where I stood. The dashed ring is that radius, drawn to scale.</li>
+        <li><span class="key key-view" aria-hidden="true"></span>View station: a scan out over the harbor, where most birds are far past 100 m. No fixed radius.</li>
+        <li><span class="key key-size" aria-hidden="true"></span>Circle area is proportional to the number of birds counted.</li>
+      </ul>
+    </section>
+
+    <footer class="colophon">
+      <p>Counts by a single observer, 10 minutes per station. Distances estimated by eye and calibrated against orthoimagery. Data and code: <a href="#" id="repo-link">GitHub</a>.</p>
+    </footer>
+  </aside>
+
+  <main class="map-wrap">
+    <div id="map" role="application" aria-label="Map of eight bird survey stations"></div>
+    <p class="status" id="status" role="status">Loading survey data…</p>
+  </main>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="js/map.js"></script>
+</body>
+</html>

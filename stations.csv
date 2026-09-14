@@ -1,0 +1,9 @@
+station_id,station_name,lat,lon,point_type,habitat_type,view_bearing_min,view_bearing_max,view_dist_m
+S01,Beach,41.71056886,-70.27573076,view,tidal,,,
+S02,Boardwalk,41.70989271,-70.2775352,view,tidal,,,
+S03,Night Heron Pond,41.70836086,-70.27764651,radius,pond_riparian,,,
+S04,Spruce Forest,41.70750243,-70.27486912,radius,evergreen_forest,,,
+S05,Tupelo Forest,41.70646117,-70.27431391,radius,deciduous_forest,,,
+S06,Bone Hill Meadow,41.70436508,-70.27248474,radius,meadow,,,
+S07,Buttonbush Swamp,41.7064366,-70.27000193,radius,swamp,,,
+S08,Old Corn Field,41.70696229,-70.27181557,radius,meadow,,,
