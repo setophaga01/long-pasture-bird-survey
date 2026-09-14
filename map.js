@@ -283,8 +283,8 @@ function focusStation(id) {
 /* ---------- controls ---------- */
 
 var METRIC_NOTES = {
-  within: 'Only birds inside the 100 m survey radius. This is the number that compares fairly across all eight stations.',
-  all: 'Every bird counted, including harbor scans past 100 m. The two view stations now dominate — that is a difference in method, not in bird life.'
+  within: 'Only birds inside the 100m survey radius',
+  all: 'Every bird counted, including harbor scans past 100m'
 };
 
 function wireControls() {
