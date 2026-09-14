@@ -346,7 +346,7 @@ function buildMap() {
   map = L.map('map', { zoomControl: true, scrollWheelZoom: true });
 
   var light = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_3ktg_1_d2a2b588db47a54e94f103ff',
     { maxZoom: 20, attribution: '&copy; OpenStreetMap contributors, &copy; CARTO' }
   );
 
