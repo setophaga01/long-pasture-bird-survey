@@ -1,10 +1,10 @@
 /* Long Pasture point counts
  */
-
+ 
 'use strict';
-
+ 
 /* ---------- settings ---------- */
-
+ 
 var SETTINGS = {
   stationsCsv:  'stations.csv',
   detectionsCsv:'detections.csv',
@@ -13,20 +13,20 @@ var SETTINGS = {
   maxCirclePx: 30,             // largest bubble
   colors: { radius: '#3B6B52', view: '#A81E67' }
 };
-
+ 
 var BEYOND_BAND = '>100';
-
+ 
 /* ---------- module state ---------- */
-
+ 
 var map, baseLayers, stationLayer;
 var stations = [];      // one object per station, from stations.csv
 var detections = [];    // one object per detection row
 var metric = 'all';  // 'within' or 'all'
 var week = 'all';       // 'all' or a week number
 var markersById = {};
-
+ 
 /* ---------- loading ---------- */
-
+ 
 function loadCsv(url) {
   return new Promise(function (resolve, reject) {
     Papa.parse(url, {
@@ -39,30 +39,35 @@ function loadCsv(url) {
     });
   });
 }
-
+ 
 /* ---------- aggregation ---------- */
-
+ 
 /* Rows for the currently selected week. */
 function activeDetections() {
   if (week === 'all') return detections;
   return detections.filter(function (d) { return d.week === week; });
 }
-
-/* Build a summary object for one station.*/
+ 
+/* Build a summary object for one station.
+   Radius stations split into within / beyond 100 m.
+   View stations record no distance, so they have one total and no within
+   figure. value is null for them under the within metric, and the UI excludes
+   null-valued stations from the ranking and the circle size scale.
+   species = [{name, count}] sorted high to low, for the active metric */
 function summarise(station, rows) {
   var isView = station.point_type === 'view';
   var mine = rows.filter(function (d) { return d.station_id === station.station_id; });
   var within = 0, beyond = 0, total = 0;
   var speciesTotals = {};
   var speciesWithin = {};
-
+ 
   mine.forEach(function (d) {
     var n = d.count || 0;
     total += n;
     speciesTotals[d.common_name] = (speciesTotals[d.common_name] || 0) + n;
-
+ 
     if (isView) return;   // distance_band is never read at view stations
-
+ 
     if (d.distance_band === BEYOND_BAND) {
       beyond += n;
     } else {
@@ -70,19 +75,19 @@ function summarise(station, rows) {
       speciesWithin[d.common_name] = (speciesWithin[d.common_name] || 0) + n;
     }
   });
-
+ 
   var table = (metric === 'within' && !isView) ? speciesWithin : speciesTotals;
   var species = Object.keys(table)
     .map(function (name) { return { name: name, count: table[name] }; })
     .sort(function (a, b) { return b.count - a.count; });
-
+ 
   var value;
   if (isView) {
     value = (metric === 'within') ? null : total;
   } else {
     value = (metric === 'within') ? within : total;
   }
-
+ 
   return {
     station: station,
     isView: isView,
@@ -94,14 +99,14 @@ function summarise(station, rows) {
     species: species
   };
 }
-
+ 
 function summariseAll() {
   var rows = activeDetections();
   return stations.map(function (s) { return summarise(s, rows); });
 }
-
+ 
 /* ---------- geometry ---------- */
-
+ 
 function destination(lat, lon, bearingDeg, distM) {
   var R = 6371000;
   var d = distM / R;
@@ -115,7 +120,7 @@ function destination(lat, lon, bearingDeg, distM) {
   );
   return [la2 * 180 / Math.PI, lo2 * 180 / Math.PI];
 }
-
+ 
 function sectorPoints(lat, lon, bMin, bMax, distM) {
   var span = bMax - bMin;
   if (span <= 0) span += 360;          // e.g. 320 -> 40 crosses north
@@ -126,8 +131,8 @@ function sectorPoints(lat, lon, bMin, bMax, distM) {
   }
   return pts;
 }
-
-
+ 
+ 
 function radiusPx(value, maxValue) {
   if (!value || !maxValue) return SETTINGS.minCirclePx;
   return Math.max(
@@ -135,19 +140,19 @@ function radiusPx(value, maxValue) {
     SETTINGS.maxCirclePx * Math.sqrt(value / maxValue)
   );
 }
-
+ 
 /* ---------- drawing ---------- */
-
+ 
 function popupHtml(s) {
   var st = s.station;
   var isView = st.point_type === 'view';
   var habitat = String(st.habitat_type || '').replace(/_/g, ' ');
-
+ 
   var html = '<div class="pop">';
   html += '<h3>' + st.station_name + '</h3>';
   html += '<p class="pop-meta">' + st.station_id + ' · ' + habitat +
           ' · ' + (isView ? 'view station' : '100 m radius') + '</p>';
-
+ 
   html += '<dl>';
   if (isView) {
     html += '<dt>Birds counted</dt><dd>' + s.total + '</dd>';
@@ -159,24 +164,24 @@ function popupHtml(s) {
   }
   html += '<dt>Species shown</dt><dd>' + s.richness + '</dd>';
   html += '</dl>';
-
+ 
   if (isView) {
     html += '<p class="vista">A scan out over the harbor, with no fixed radius ' +
             'and no distance recorded. This total is not comparable to the ' +
             'radius stations' +
-            (metric === 'within' ? ', so this station is not incorporated into the within-100 m view.' : '.') +
+            (metric === 'within' ? ', and it is not included in this view.' : '.') +
             '</p>';
   }
-
+ 
   if (s.species.length) {
     var SHOWN = 6;
-
+ 
     html += '<ul class="species">';
     s.species.slice(0, SHOWN).forEach(function (sp) {
       html += '<li><span>' + sp.name + '</span><span class="n">' + sp.count + '</span></li>';
     });
     html += '</ul>';
-
+ 
     if (s.species.length > SHOWN) {
       var rest = s.species.slice(SHOWN);
       html += '<details class="species-more">';
@@ -190,25 +195,25 @@ function popupHtml(s) {
   } else {
     html += '<p class="vista">No detections recorded here in this week.</p>';
   }
-
+ 
   return html + '</div>';
 }
-
+ 
 function draw() {
   stationLayer.clearLayers();
   markersById = {};
-
+ 
   var summaries = summariseAll();
   var maxValue = summaries.reduce(function (m, s) {
     return (s.value === null) ? m : Math.max(m, s.value);
   }, 0);
-
+ 
   summaries.forEach(function (s) {
     var st = s.station;
     var isView = st.point_type === 'view';
     var color = isView ? SETTINGS.colors.view : SETTINGS.colors.radius;
     var latlng = [st.lat, st.lon];
-
+ 
     if (!isView) {
       L.circle(latlng, {
         radius: SETTINGS.surveyRadiusM,
@@ -220,7 +225,7 @@ function draw() {
         interactive: false
       }).addTo(stationLayer);
     }
-
+ 
     /* Optional sightline wedge for view stations. */
     if (isView && st.view_bearing_min !== null && st.view_bearing_min !== '' &&
         st.view_dist_m) {
@@ -231,33 +236,33 @@ function draw() {
           fillOpacity: 0.07, interactive: false }
       ).addTo(stationLayer);
     }
-
-    var sittingOut = (s.value === null);
-
+ 
+    var noValue = (s.value === null);
+ 
     var marker = L.circleMarker(latlng, {
-      radius: sittingOut ? SETTINGS.minCirclePx : radiusPx(s.value, maxValue),
+      radius: noValue ? SETTINGS.minCirclePx : radiusPx(s.value, maxValue),
       color: color,
       weight: 1.5,
-      dashArray: sittingOut ? '3 3' : null,
+      dashArray: noValue ? '3 3' : null,
       fillColor: color,
-      fillOpacity: sittingOut ? 0.06 : 0.45
+      fillOpacity: noValue ? 0.06 : 0.45
     }).addTo(stationLayer);
-
+ 
     marker.bindPopup(popupHtml(s), { maxWidth: 300 });
     marker.bindTooltip(
-      st.station_name + ' — ' + (sittingOut ? 'no distance recorded' : s.value),
+      st.station_name + ' — ' + (noValue ? 'no distance recorded' : s.value),
       { direction: 'top' }
     );
     markersById[st.station_id] = marker;
   });
-
+ 
   drawList(summaries);
 }
-
+ 
 function drawList(summaries) {
   var list = document.getElementById('station-list');
   list.innerHTML = '';
-
+ 
   summaries
     .slice()
     .sort(function (a, b) {
@@ -272,27 +277,27 @@ function drawList(summaries) {
       var li = document.createElement('li');
       var btn = document.createElement('button');
       btn.type = 'button';
-
+ 
       var sid = document.createElement('span');
       sid.className = 'sid';
       sid.textContent = s.station.station_id;
-
+ 
       var name = document.createElement('span');
       name.className = 'sname' + (s.station.habitat_type === 'tidal' ? ' is-tidal' : '');
       name.textContent = s.station.station_name;
-
+ 
       var count = document.createElement('span');
       count.className = 'scount' + (s.value === null ? ' is-na' : '');
       count.textContent = (s.value === null) ? '—' : s.value;
       if (s.value === null) count.title = 'No distance recorded at this station';
-
+ 
       btn.append(sid, name, count);
       btn.addEventListener('click', function () { focusStation(s.station.station_id); });
       li.appendChild(btn);
       list.appendChild(li);
     });
 }
-
+ 
 function focusStation(id) {
   var marker = markersById[id];
   if (!marker) return;
@@ -301,14 +306,14 @@ function focusStation(id) {
   if (reduced) { map.setView(target, 17); } else { map.flyTo(target, 17, { duration: 0.6 }); }
   marker.openPopup();
 }
-
+ 
 /* ---------- controls ---------- */
-
+ 
 var METRIC_NOTES = {
   within: 'Only detections inside the 100 m survey radius',
-  all: 'Every detection counted, at every station'
+  all: 'Every bird counted, at every station'
 };
-
+ 
 function wireControls() {
   document.querySelectorAll('.segmented button').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -322,14 +327,14 @@ function wireControls() {
       draw();
     });
   });
-
+ 
   var select = document.getElementById('week-select');
   var weeks = [];
   detections.forEach(function (d) {
     if (d.week != null && weeks.indexOf(d.week) === -1) weeks.push(d.week);
   });
   weeks.sort(function (a, b) { return a - b; });
-
+ 
   weeks.forEach(function (w) {
     var opt = document.createElement('option');
     opt.value = String(w);
@@ -337,25 +342,25 @@ function wireControls() {
     opt.textContent = date;
     select.appendChild(opt);
   });
-
+ 
   if (weeks.length > 1) {
     var all = document.createElement('option');
     all.value = 'all';
     all.textContent = 'All weeks combined';
     select.appendChild(all);
   }
-
+ 
   week = weeks.length ? weeks[weeks.length - 1] : 'all';
   select.value = String(week);
-
+ 
   select.addEventListener('change', function () {
     week = (select.value === 'all') ? 'all' : Number(select.value);
     draw();
   });
 }
-
+ 
 /* ---------- start-up ---------- */
-
+ 
 function setStatus(message, isError) {
   var el = document.getElementById('status');
   if (!message) { el.hidden = true; return; }
@@ -363,47 +368,47 @@ function setStatus(message, isError) {
   el.textContent = message;
   el.classList.toggle('is-error', Boolean(isError));
 }
-
+ 
 function buildMap() {
   map = L.map('map', { zoomControl: true, scrollWheelZoom: true });
-
+ 
   var light = L.tileLayer(
     'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_3ktg_1_d2a2b588db47a54e94f103ff',
     { maxZoom: 20, attribution: '&copy; OpenStreetMap contributors, &copy; CARTO' }
   );
-
+ 
   var imagery = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 19, attribution: 'Imagery: Esri, Maxar, Earthstar Geographics' }
   );
-
+ 
   light.addTo(map);
   baseLayers = { 'Plain': light, 'Aerial': imagery };
   L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
   L.control.scale({ imperial: false }).addTo(map);
-
+ 
   stationLayer = L.layerGroup().addTo(map);
 }
-
+ 
 function init() {
   buildMap();
-
+ 
   var stage = 'load';
-
+ 
   Promise.all([loadCsv(SETTINGS.stationsCsv), loadCsv(SETTINGS.detectionsCsv)])
     .then(function (results) {
       stage = 'draw';
       stations = results[0].filter(function (s) { return s.station_id && s.lat && s.lon; });
       detections = results[1].filter(function (d) { return d.station_id; });
-
+ 
       if (!stations.length) {
         stage = 'load';
         throw new Error('stations.csv loaded but contained no usable rows');
       }
-
+ 
       wireControls();
       draw();
-
+ 
       map.fitBounds(
         L.latLngBounds(stations.map(function (s) { return [s.lat, s.lon]; })),
         { padding: [60, 60] }
@@ -420,5 +425,5 @@ function init() {
       }
     });
 }
-
+ 
 document.addEventListener('DOMContentLoaded', init);
