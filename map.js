@@ -305,8 +305,8 @@ function focusStation(id) {
 /* ---------- controls ---------- */
 
 var METRIC_NOTES = {
-  within: 'Only birds inside the 100 m survey radius. The Beach and the Boardwalk record no distance, so they sit this one out',
-  all: 'Every bird counted, at every station'
+  within: 'Only detections inside the 100 m survey radius',
+  all: 'Every detection counted, at every station'
 };
 
 function wireControls() {
