@@ -1,15 +1,9 @@
-/* Long Pasture point counts — map logic
- *
- * Reads two CSVs from /data, sums detections per station, and draws them.
- * Everything is computed in the browser, so the map can never disagree
- * with the data files. Edit a CSV, reload, done.
- *
- * Reading order if you're new to JS: start at init() near the bottom.
+/* Long Pasture point counts
  */
 
 'use strict';
 
-/* ---------- settings you might actually want to change ---------- */
+/* ---------- settings ---------- */
 
 var SETTINGS = {
   stationsCsv:  'stations.csv',
@@ -20,8 +14,6 @@ var SETTINGS = {
   colors: { radius: '#3B6B52', view: '#A81E67' }
 };
 
-/* Any band except '>100' is inside the survey radius. Keeping the test
-   in one place means a future band ('100-200') only needs editing here. */
 var BEYOND_BAND = '>100';
 
 /* ---------- module state ---------- */
@@ -100,8 +92,6 @@ function summariseAll() {
 
 /* ---------- geometry ---------- */
 
-/* Move distM metres from a point along a compass bearing.
-   Standard great-circle destination formula; accurate enough at 400 m. */
 function destination(lat, lon, bearingDeg, distM) {
   var R = 6371000;
   var d = distM / R;
@@ -116,10 +106,6 @@ function destination(lat, lon, bearingDeg, distM) {
   return [la2 * 180 / Math.PI, lo2 * 180 / Math.PI];
 }
 
-/* A pie-slice polygon for a view station's sightline.
-   Only drawn if you fill in view_bearing_min / view_bearing_max /
-   view_dist_m in stations.csv. Bearings are compass degrees, clockwise
-   from north; the wedge is drawn from min to max going clockwise. */
 function sectorPoints(lat, lon, bMin, bMax, distM) {
   var span = bMax - bMin;
   if (span <= 0) span += 360;          // e.g. 320 -> 40 crosses north
@@ -131,13 +117,9 @@ function sectorPoints(lat, lon, bMin, bMax, distM) {
   return pts;
 }
 
-/* Circle area, not radius, should be proportional to the count —
-   otherwise big numbers look several times bigger than they are. */
+
 function radiusPx(value, maxValue) {
   if (!value || !maxValue) return SETTINGS.minCirclePx;
-  // radius = k * sqrt(value) keeps AREA proportional to the count, which is
-  // what the eye reads. Adding a minimum size on top of this would break the
-  // proportionality, so the floor only catches empty stations.
   return Math.max(
     SETTINGS.minCirclePx,
     SETTINGS.maxCirclePx * Math.sqrt(value / maxValue)
@@ -199,8 +181,6 @@ function draw() {
     var color = isView ? SETTINGS.colors.view : SETTINGS.colors.radius;
     var latlng = [st.lat, st.lon];
 
-    /* The true 100 m survey radius, to scale on the ground.
-       L.circle takes metres, so this stays correct at every zoom. */
     if (!isView) {
       L.circle(latlng, {
         radius: SETTINGS.surveyRadiusM,
@@ -360,16 +340,12 @@ function buildMap() {
   L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
   L.control.scale({ imperial: false }).addTo(map);
 
-  /* Every station circle, ring and wedge goes in here, so redrawing after a
-     control change is just clearLayers() plus a fresh pass. */
   stationLayer = L.layerGroup().addTo(map);
 }
 
 function init() {
   buildMap();
 
-  /* Track which half we're in, so a drawing bug isn't reported as a
-     missing-file problem. */
   var stage = 'load';
 
   Promise.all([loadCsv(SETTINGS.stationsCsv), loadCsv(SETTINGS.detectionsCsv)])
