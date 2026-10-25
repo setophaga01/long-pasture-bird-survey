@@ -49,37 +49,52 @@ function activeDetections() {
 }
 
 /* Build a summary object for one station.
-   within  = birds inside the 100 m radius (comparable across all stations)
-   beyond  = birds counted past 100 m (the harbor scans at the view stations)
+   Radius stations split into within / beyond 100 m.
+   View stations record no distance, so they have one total and no within
+   figure. value is null for them under the within metric, which the UI reads
+   as "leave this station out of the ranking".
    species = [{name, count}] sorted high to low, for the active metric */
 function summarise(station, rows) {
+  var isView = station.point_type === 'view';
   var mine = rows.filter(function (d) { return d.station_id === station.station_id; });
-  var within = 0, beyond = 0;
+  var within = 0, beyond = 0, total = 0;
   var speciesTotals = {};
   var speciesWithin = {};
 
   mine.forEach(function (d) {
     var n = d.count || 0;
+    total += n;
+    speciesTotals[d.common_name] = (speciesTotals[d.common_name] || 0) + n;
+
+    if (isView) return;   // distance_band is never read at view stations
+
     if (d.distance_band === BEYOND_BAND) {
       beyond += n;
     } else {
       within += n;
       speciesWithin[d.common_name] = (speciesWithin[d.common_name] || 0) + n;
     }
-    speciesTotals[d.common_name] = (speciesTotals[d.common_name] || 0) + n;
   });
 
-  var table = (metric === 'within') ? speciesWithin : speciesTotals;
+  var table = (metric === 'within' && !isView) ? speciesWithin : speciesTotals;
   var species = Object.keys(table)
     .map(function (name) { return { name: name, count: table[name] }; })
     .sort(function (a, b) { return b.count - a.count; });
 
+  var value;
+  if (isView) {
+    value = (metric === 'within') ? null : total;
+  } else {
+    value = (metric === 'within') ? within : total;
+  }
+
   return {
     station: station,
-    within: within,
-    beyond: beyond,
-    total: within + beyond,
-    value: (metric === 'within') ? within : within + beyond,
+    isView: isView,
+    within: isView ? null : within,
+    beyond: isView ? null : beyond,
+    total: total,
+    value: value,
     richness: species.length,
     species: species
   };
@@ -139,20 +154,26 @@ function popupHtml(s) {
           ' · ' + (isView ? 'view station' : '100 m radius') + '</p>';
 
   html += '<dl>';
-  html += '<dt>Birds within 100 m</dt><dd>' + s.within + '</dd>';
-  if (s.beyond > 0) {
-    html += '<dt>Birds past 100 m</dt><dd>' + s.beyond + '</dd>';
+  if (isView) {
+    html += '<dt>Birds counted</dt><dd>' + s.total + '</dd>';
+  } else {
+    html += '<dt>Birds within 100 m</dt><dd>' + s.within + '</dd>';
+    if (s.beyond > 0) {
+      html += '<dt>Birds past 100 m</dt><dd>' + s.beyond + '</dd>';
+    }
   }
   html += '<dt>Species shown</dt><dd>' + s.richness + '</dd>';
   html += '</dl>';
 
-  if (isView && s.beyond > 0) {
-    html += '<p class="vista">Most of this station\'s birds are out on the flats, ' +
-            'well past 100 m. Compare it to the inland stations on the ' +
-            'within-100 m figure only.</p>';
+  if (isView) {
+    html += '<p class="vista">A scan out over the harbor, with no fixed radius ' +
+            'and no distance recorded. This total is not comparable to the ' +
+            'radius stations' +
+            (metric === 'within' ? ', so this station sits out the within-100 m view.' : '.') +
+            '</p>';
   }
 
- if (s.species.length) {
+  if (s.species.length) {
     var SHOWN = 6;
 
     html += '<ul class="species">';
@@ -183,7 +204,9 @@ function draw() {
   markersById = {};
 
   var summaries = summariseAll();
-  var maxValue = summaries.reduce(function (m, s) { return Math.max(m, s.value); }, 0);
+  var maxValue = summaries.reduce(function (m, s) {
+    return (s.value === null) ? m : Math.max(m, s.value);
+  }, 0);
 
   summaries.forEach(function (s) {
     var st = s.station;
@@ -214,16 +237,22 @@ function draw() {
       ).addTo(stationLayer);
     }
 
+    var sittingOut = (s.value === null);
+
     var marker = L.circleMarker(latlng, {
-      radius: radiusPx(s.value, maxValue),
+      radius: sittingOut ? SETTINGS.minCirclePx : radiusPx(s.value, maxValue),
       color: color,
       weight: 1.5,
+      dashArray: sittingOut ? '3 3' : null,
       fillColor: color,
-      fillOpacity: 0.45
+      fillOpacity: sittingOut ? 0.06 : 0.45
     }).addTo(stationLayer);
 
     marker.bindPopup(popupHtml(s), { maxWidth: 300 });
-    marker.bindTooltip(st.station_name + ' — ' + s.value, { direction: 'top' });
+    marker.bindTooltip(
+      st.station_name + ' — ' + (sittingOut ? 'no distance recorded' : s.value),
+      { direction: 'top' }
+    );
     markersById[st.station_id] = marker;
   });
 
@@ -236,7 +265,14 @@ function drawList(summaries) {
 
   summaries
     .slice()
-    .sort(function (a, b) { return b.value - a.value; })
+    .sort(function (a, b) {
+      if (a.value === null && b.value === null) {
+        return a.station.station_id < b.station.station_id ? -1 : 1;
+      }
+      if (a.value === null) return 1;
+      if (b.value === null) return -1;
+      return b.value - a.value;
+    })
     .forEach(function (s) {
       var li = document.createElement('li');
       var btn = document.createElement('button');
@@ -251,8 +287,9 @@ function drawList(summaries) {
       name.textContent = s.station.station_name;
 
       var count = document.createElement('span');
-      count.className = 'scount';
-      count.textContent = s.value;
+      count.className = 'scount' + (s.value === null ? ' is-na' : '');
+      count.textContent = (s.value === null) ? '—' : s.value;
+      if (s.value === null) count.title = 'No distance recorded at this station';
 
       btn.append(sid, name, count);
       btn.addEventListener('click', function () { focusStation(s.station.station_id); });
@@ -273,8 +310,8 @@ function focusStation(id) {
 /* ---------- controls ---------- */
 
 var METRIC_NOTES = {
-  within: 'Only birds inside the 100 m survey radius',
-  all: 'Every bird counted, including harbor scans past 100 m'
+  within: 'Only birds inside the 100 m survey radius. The Beach and the Boardwalk record no distance, so they sit this one out',
+  all: 'Every bird counted, at every station'
 };
 
 function wireControls() {
