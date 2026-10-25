@@ -48,12 +48,7 @@ function activeDetections() {
   return detections.filter(function (d) { return d.week === week; });
 }
 
-/* Build a summary object for one station.
-   Radius stations split into within / beyond 100 m.
-   View stations record no distance, so they have one total and no within
-   figure. value is null for them under the within metric, which the UI reads
-   as "leave this station out of the ranking".
-   species = [{name, count}] sorted high to low, for the active metric */
+/* Build a summary object for one station.*/
 function summarise(station, rows) {
   var isView = station.point_type === 'view';
   var mine = rows.filter(function (d) { return d.station_id === station.station_id; });
