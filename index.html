@@ -4,42 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Long Pasture Bird Survey</title>
-
+ 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-
+ 
 <body>
 <div class="shell">
-
+ 
   <aside class="panel">
     <header class="masthead">
       <h1>Long Pasture Bird Survey</h1>
       <p class="standfirst">This is an interactive map of my hobbyist bird surveying as done at Long Pasture Wildlife Sanctuary, Barnstable, Massachusetts.</p>
     </header>
-
+ 
     <section class="control" aria-labelledby="metric-label">
       <h2 id="metric-label">Measurement scope</h2>
       <div class="segmented" role="radiogroup" aria-labelledby="metric-label">
-        <button type="button" role="radio" aria-checked="true" data-metric="within" class="is-active">Within 100 m</button>
-        <button type="button" role="radio" aria-checked="false" data-metric="all">Everything visible</button>
+        <button type="button" role="radio" aria-checked="true" data-metric="all" class="is-active">Everything visible</button>
+        <button type="button" role="radio" aria-checked="false" data-metric="within">Within 100 m</button>
       </div>
-      <p class="control-note" id="metric-note">Only detections inside the 100 m survey radius</p>
+      <p class="control-note" id="metric-note">Every detection, at every station</p>
     </section>
-
+ 
     <section class="control">
       <h2><label for="week-select">Survey date</label></h2>
       <select id="week-select"></select>
     </section>
-
+ 
     <section class="control">
       <h2>Stations</h2>
       <ol class="station-list" id="station-list"></ol>
     </section>
-
+ 
     <section class="control">
       <h2>Map legend</h2>
       <ul class="legend">
@@ -48,21 +48,22 @@
         <li><span class="key key-size" aria-hidden="true"></span>Circle area is proportional to the number of birds counted.</li>
       </ul>
     </section>
-
+ 
     <footer class="colophon">
       <p>Counts by a single observer (Jack Madigan), 20 minutes per station. Distances estimated by eye and calibrated against orthoimagery. Data and code: <a href="#" id="repo-link">GitHub</a>.</p>
     </footer>
   </aside>
-
+ 
   <main class="map-wrap">
     <div id="map" role="application" aria-label="Map of eight bird survey stations"></div>
     <p class="status" id="status" role="status">Loading survey data…</p>
   </main>
-
+ 
 </div>
-
+ 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="map.js"></script>
 </body>
 </html>
+ 
