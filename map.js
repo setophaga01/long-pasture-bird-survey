@@ -346,7 +346,7 @@ function wireControls() {
   if (weeks.length > 1) {
     var all = document.createElement('option');
     all.value = 'all';
-    all.textContent = 'All weeks combined';
+    all.textContent = 'All visits combined';
     select.appendChild(all);
   }
  
