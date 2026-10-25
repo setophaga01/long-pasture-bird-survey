@@ -152,15 +152,25 @@ function popupHtml(s) {
             'within-100 m figure only.</p>';
   }
 
-  if (s.species.length) {
+ if (s.species.length) {
+    var SHOWN = 6;
+
     html += '<ul class="species">';
-    s.species.slice(0, 6).forEach(function (sp) {
+    s.species.slice(0, SHOWN).forEach(function (sp) {
       html += '<li><span>' + sp.name + '</span><span class="n">' + sp.count + '</span></li>';
     });
-    if (s.species.length > 6) {
-      html += '<li><span>and ' + (s.species.length - 6) + ' more</span><span class="n"></span></li>';
-    }
     html += '</ul>';
+
+    if (s.species.length > SHOWN) {
+      var rest = s.species.slice(SHOWN);
+      html += '<details class="species-more">';
+      html += '<summary>' + rest.length + ' more species</summary>';
+      html += '<ul class="species species-rest">';
+      rest.forEach(function (sp) {
+        html += '<li><span>' + sp.name + '</span><span class="n">' + sp.count + '</span></li>';
+      });
+      html += '</ul></details>';
+    }
   } else {
     html += '<p class="vista">No detections recorded here in this week.</p>';
   }
