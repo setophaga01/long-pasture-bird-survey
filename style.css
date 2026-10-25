@@ -165,7 +165,11 @@ select {
   font-weight: 600;
   font-size: 0.9375rem;
 }
-
+/* a station with no figure for the selected metric */
+.station-list .scount.is-na {
+  font-weight: 400;
+  color: var(--ink-soft);
+}
 /* ---------- legend ---------- */
 
 .legend {
