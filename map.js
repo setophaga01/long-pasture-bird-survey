@@ -292,7 +292,7 @@ function wireControls() {
     var opt = document.createElement('option');
     opt.value = String(w);
     var date = (detections.find(function (d) { return d.week === w; }) || {}).date;
-    opt.textContent = 'Week ' + w + (date ? ' — ' + date : '');
+    opt.textContent = date || ('Week ' + w);
     select.appendChild(opt);
   });
 
