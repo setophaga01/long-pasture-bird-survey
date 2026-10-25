@@ -21,7 +21,7 @@ var BEYOND_BAND = '>100';
 var map, baseLayers, stationLayer;
 var stations = [];      // one object per station, from stations.csv
 var detections = [];    // one object per detection row
-var metric = 'within';  // 'within' or 'all'
+var metric = 'all';  // 'within' or 'all'
 var week = 'all';       // 'all' or a week number
 var markersById = {};
 
