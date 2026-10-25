@@ -164,7 +164,7 @@ function popupHtml(s) {
     html += '<p class="vista">A scan out over the harbor, with no fixed radius ' +
             'and no distance recorded. This total is not comparable to the ' +
             'radius stations' +
-            (metric === 'within' ? ', so this station sits out the within-100 m view.' : '.') +
+            (metric === 'within' ? ', so this station is not incorporated into the within-100 m view.' : '.') +
             '</p>';
   }
 
