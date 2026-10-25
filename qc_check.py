@@ -60,6 +60,25 @@ def main() -> int:
     if len(missing):
         problems.append(f"{len(missing)} detection rows are missing a species")
 
+    # Distance is required at the radius stations and not recorded at the view
+    # stations, where the count is a harbor scan with no fixed radius.
+    view_ids = set(stations.loc[stations.point_type == "view", "station_id"])
+    radius_rows = detections[~detections.station_id.isin(view_ids)]
+    no_band = radius_rows[radius_rows.distance_band.isna() | (radius_rows.distance_band == "")]
+    for sid, n in no_band.groupby("station_id").size().items():
+        problems.append(
+            f"{sid} is a radius station but {n} of its rows have no distance_band "
+            "— those birds are invisible to the within-100 m figure"
+        )
+
+    view_rows = detections[detections.station_id.isin(view_ids)]
+    has_band = view_rows[view_rows.distance_band.notna() & (view_rows.distance_band != "")]
+    if len(has_band):
+        warnings.append(
+            f"{len(has_band)} rows at the view stations still carry a distance_band; "
+            "harmless, the map ignores it there"
+        )
+
     mixed = detections.groupby("species_code").common_name.nunique()
     for code in mixed[mixed > 1].index:
         names = sorted(detections.loc[detections.species_code == code, "common_name"].unique())
@@ -85,25 +104,31 @@ def main() -> int:
 
     # --- summary ------------------------------------------------------
 
-    merged = detections.merge(
-        stations[["station_id", "point_type", "habitat_type"]], on="station_id", how="left"
-    )
-    inside = merged[merged.distance_band != BEYOND]
+    is_view = merged.station_id.isin(view_ids)
+
+    # The within/beyond split only applies at the radius stations. View
+    # stations report one total, matching what the map shows.
+    radius = merged[~is_view]
+    inside = radius[radius.distance_band != BEYOND]
 
     summary = pd.DataFrame(
         {
             "type": merged.groupby("station_id").point_type.first(),
             "habitat": merged.groupby("station_id").habitat_type.first(),
+            "total": merged.groupby("station_id")["count"].sum(),
             "within100": inside.groupby("station_id")["count"].sum(),
-            "beyond100": merged[merged.distance_band == BEYOND].groupby("station_id")["count"].sum(),
-            "species": inside.groupby("station_id").species_code.nunique(),
+            "beyond100": radius[radius.distance_band == BEYOND].groupby("station_id")["count"].sum(),
+            "species": merged.groupby("station_id").species_code.nunique(),
         }
-    ).fillna(0)
-    summary[["within100", "beyond100", "species"]] = summary[
-        ["within100", "beyond100", "species"]
-    ].astype(int)
+    )
+    # a dash where the figure does not apply, rather than a misleading zero
+    for col in ("within100", "beyond100"):
+        summary[col] = summary[col].map(
+            lambda v: "—" if pd.isna(v) else str(int(v))
+        )
+    summary[["total", "species"]] = summary[["total", "species"]].fillna(0).astype(int)
 
-    print(summary.sort_values("within100", ascending=False).to_string())
+    print(summary.sort_values("total", ascending=False).to_string())
     print()
     weeks = sorted(int(w) for w in detections.week.dropna().unique()) if "week" in detections else []
     print(
