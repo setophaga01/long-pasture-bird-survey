@@ -309,6 +309,24 @@ select {
 
 .pop .species .n { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 
+.pop .species-more { margin: 0; }
+
+.pop .species-more summary {
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  padding: 0.35rem 0 0.1rem;
+}
+
+.pop .species-more summary:hover { color: var(--ink); }
+.pop .species-more[open] summary { margin-bottom: 0.2rem; }
+
+/* the hidden rows continue the list above */
+.pop .species-rest { border-top: 0; padding-top: 0; }
+
+/* list scrolls inside the popup */
+.leaflet-popup-content { max-height: 60vh; overflow-y: auto; }
+
 .leaflet-container { font-family: var(--sans); }
 
 /* ---------- small screens ---------- */
