@@ -155,7 +155,7 @@ function popupHtml(s) {
  
   html += '<dl>';
   if (isView) {
-    html += '<dt>Birds counted</dt><dd>' + s.total + '</dd>';
+    html += '<dt>Birds detected</dt><dd>' + s.total + '</dd>';
   } else {
     html += '<dt>Birds within 100 m</dt><dd>' + s.within + '</dd>';
     if (s.beyond > 0) {
@@ -311,7 +311,7 @@ function focusStation(id) {
  
 var METRIC_NOTES = {
   within: 'Only detections inside the 100 m survey radius',
-  all: 'Every bird counted, at every station'
+  all: 'Every detection counted, at every station'
 };
  
 function wireControls() {
